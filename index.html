@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SRR Stock Report | စတော့ လက်ကျန်</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1877f2; --blue-dark:#145dbf; --blue-light:#e7f0fe;
+  --bg:#f0f2f5; --card:#ffffff; --text:#050505; --text2:#65676b;
+  --border:#dddfe2; --green:#42b72a; --green-bg:#e8f7e4;
+  --red:#fa383e; --red-bg:#feeaea; --orange:#f7b928; --orange-bg:#fff6e0;
+  --purple:#7c5cff; --purple-bg:#f0ecff; --gray-bg:#f5f6f7;
+  --radius:10px; --shadow:0 1px 2px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{ font-family:'Inter','Noto Sans Myanmar',sans-serif; background:var(--bg); color:var(--text); padding-bottom:76px; -webkit-tap-highlight-color:transparent; }
+.my{font-family:'Noto Sans Myanmar','Inter',sans-serif;}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+
+.topbar{ position:sticky; top:0; z-index:50; background:var(--blue); color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow); }
+.topbar-title{display:flex; flex-direction:column; line-height:1.25;}
+.topbar-title .en{font-weight:800; font-size:17px;}
+.topbar-title .my{font-size:12px; opacity:.9;}
+.sync-pill{ display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.18); padding:5px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.sync-dot{width:8px; height:8px; border-radius:50%; background:#8ef58e;}
+.sync-dot.syncing{background:#ffe17a; animation:pulse 1s infinite;}
+.sync-dot.offline{background:#ff9b9b;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.tabs{ position:sticky; top:52px; z-index:49; display:flex; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; }
+.tab-btn{ flex:1; min-width:80px; padding:11px 6px; text-align:center; background:none; border:none; font-size:12.5px; font-weight:600; color:var(--text2); border-bottom:3px solid transparent; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.tab-btn .my{font-size:10.5px; font-weight:500;}
+.tab-btn.active{color:var(--blue); border-bottom-color:var(--blue);}
+.tab-btn svg{width:20px; height:20px;}
+
+main{max-width:900px; margin:0 auto; padding:12px;}
+.tabpanel{display:none;}
+.tabpanel.active{display:block; animation:fade .15s ease;}
+@keyframes fade{from{opacity:0} to{opacity:1}}
+
+.card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; margin-bottom:12px;}
+.section-title{font-size:15px; font-weight:800; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.section-title .my{font-weight:600; font-size:12px; color:var(--text2);}
+.muted{color:var(--text2); font-size:12.5px;}
+
+.stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px;}
+@media(min-width:560px){.stat-grid{grid-template-columns:repeat(4,1fr);}}
+.stat-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; text-align:center;}
+.stat-card .num{font-size:24px; font-weight:800; color:var(--blue);}
+.stat-card .lbl{font-size:11px; color:var(--text2); font-weight:600; margin-top:2px;}
+.stat-card .lbl .my{display:block; font-size:10px;}
+
+.site-tabs{display:flex; gap:6px; margin-bottom:10px; overflow-x:auto;}
+.site-tab{ padding:9px 14px; border-radius:20px; background:#fff; border:1.5px solid var(--border); font-size:12.5px; font-weight:700; white-space:nowrap; color:var(--text2); }
+.site-tab.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+.site-tab .my{display:block; font-weight:500; font-size:10px;}
+
+.search-row{display:flex; gap:8px; margin-bottom:10px;}
+.search-row input[type=text]{flex:1;}
+.filter-chips{display:flex; gap:6px; overflow-x:auto; margin-bottom:10px;}
+.filter-chip{ padding:6px 12px; border-radius:20px; background:#fff; border:1px solid var(--border); font-size:12px; font-weight:600; white-space:nowrap; color:var(--text2); }
+.filter-chip.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+
+.list-item{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px 14px; margin-bottom:9px; cursor:pointer; }
+.li-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.li-title{font-weight:700; font-size:14.5px;}
+.li-sub{font-size:12px; color:var(--text2); margin-top:2px;}
+.badge{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+.badge.filled{background:var(--green-bg); color:var(--green);}
+.badge.empty{background:var(--gray-bg); color:var(--text2);}
+.li-meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+.chip{background:var(--gray-bg); border-radius:6px; padding:3px 8px; font-size:11px; color:var(--text2); font-weight:600;}
+
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:8px; padding:10px 16px; font-weight:700; font-size:13.5px; }
+.btn-primary{background:var(--blue); color:#fff;}
+.btn-secondary{background:var(--gray-bg); color:var(--text);}
+.btn-danger{background:var(--red-bg); color:var(--red);}
+.btn-block{width:100%;}
+.btn-sm{padding:7px 12px; font-size:12.5px;}
+
+input[type=text], input[type=number], select, textarea{ width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; background:#fff; color:var(--text); }
+label{display:block; font-size:12px; font-weight:700; color:var(--text2); margin-bottom:5px; margin-top:12px;}
+label .my{font-weight:500; font-size:11px;}
+label:first-of-type{margin-top:0;}
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:0 10px;}
+.form-grid .full{grid-column:1/-1;}
+.hint{font-size:10.5px; color:var(--text2); margin-top:3px;}
+
+.modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; display:flex; align-items:flex-end; justify-content:center; }
+@media(min-width:640px){.modal-overlay{align-items:center;}}
+.modal{ background:#fff; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; border-radius:16px 16px 0 0; padding:0; }
+@media(min-width:640px){.modal{border-radius:14px;}}
+.modal-head{ position:sticky; top:0; background:#fff; z-index:2; padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.modal-head h3{font-size:16px; font-weight:800;}
+.modal-head .my{font-size:11.5px; color:var(--text2); font-weight:500;}
+.modal-close{background:var(--gray-bg); border:none; width:30px; height:30px; border-radius:50%; font-size:16px; color:var(--text2);}
+.modal-body{padding:14px 16px 20px;}
+.modal-foot{padding:12px 16px 18px; display:flex; gap:8px; border-top:1px solid var(--border);}
+
+.entry-row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.entry-row:last-child{border-bottom:none;}
+.entry-row .er-info{flex:1;}
+.entry-row .er-morph{font-weight:700;}
+.entry-row .er-meta{color:var(--text2); font-size:11.5px; margin-top:2px;}
+.entry-row .er-amt{font-weight:800; color:var(--blue); font-size:16px; margin-right:8px;}
+.entry-del{background:var(--red-bg); color:var(--red); border:none; border-radius:6px; padding:5px 9px; font-size:11px; font-weight:700;}
+
+.report-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.report-row:last-child{border-bottom:none;}
+.report-row .rg{font-weight:700;}
+.report-row .rd{color:var(--text2); font-size:12px;}
+.empty-state{text-align:center; padding:30px 10px; color:var(--text2);}
+
+#toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:#1c1e21; color:#fff; padding:10px 18px; border-radius:24px; font-size:13px; font-weight:600; opacity:0; transition:.25s; z-index:200; pointer-events:none; white-space:nowrap; }
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+::-webkit-scrollbar{height:0; width:0;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <span class="en">📦 SRR Stock Report</span>
+    <span class="my">စတော့ လက်ကျန် အစီရင်ခံစာ</span>
+  </div>
+  <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Synced</span></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    <span>Dashboard</span><span class="my">ခြုံငုံသုံးသပ်ချက်</span>
+  </button>
+  <button class="tab-btn" data-tab="stock">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+    <span>Stock</span><span class="my">လက်ကျန်</span>
+  </button>
+  <button class="tab-btn" data-tab="reports">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z"/><path d="M9 3v6h6M9 13h6M9 17h6"/></svg>
+    <span>Reports</span><span class="my">အစီရင်ခံစာ</span>
+  </button>
+</div>
+
+<main>
+  <!-- ===================== DASHBOARD ===================== -->
+  <section id="tab-dashboard" class="tabpanel active">
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="card">
+      <div class="section-title">By Site <span class="my">တည်နေရာအလိုက်</span></div>
+      <div id="siteBreakdown"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Recently Logged <span class="my">မကြာသေးမီက ထည့်ပြီး</span></div>
+      <div id="recentEntries"></div>
+    </div>
+  </section>
+
+  <!-- ===================== STOCK ===================== -->
+  <section id="tab-stock" class="tabpanel">
+    <div class="site-tabs" id="siteTabs"></div>
+    <div class="search-row">
+      <input type="text" id="locSearch" placeholder="Search location... / တည်နေရာရှာရန်">
+    </div>
+    <div class="filter-chips" id="stockFilters"></div>
+    <div id="locationList"></div>
+  </section>
+
+  <!-- ===================== REPORTS ===================== -->
+  <section id="tab-reports" class="tabpanel">
+    <div class="filter-chips" id="reportSiteFilter"></div>
+
+    <div class="card">
+      <div class="section-title">📊 Summary <span class="my">အနှစ်ချုပ်</span></div>
+      <div id="reportStats" class="stat-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">By Morph <span class="my">မျိုးရိုးအလိုက်</span></div>
+      <div id="reportByMorph"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">By Sex <span class="my">ကျား/မ အလိုက်</span></div>
+      <div id="reportBySex"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">By Weight <span class="my">အလေးချိန်အလိုက်</span></div>
+      <div id="reportByWeight"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">By Group # <span class="my">အုပ်စုနံပါတ်အလိုက်</span></div>
+      <div id="reportByGroup"></div>
+    </div>
+
+    <button class="btn btn-secondary btn-block" onclick="copyStockReport()">📋 Copy Full Report <span class="my">ကူးယူမည်</span></button>
+  </section>
+</main>
+
+<div id="toast"></div>
+<div id="modalRoot"></div>
+
+<script>
+/* =========================================================================
+   CONFIG — paste your Apps Script /exec URL below after deploying Code.gs
+   ========================================================================= */
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxRRjmelZhDjQh7AdvGgk5fCPzE5VldRrPm5LLlnSBFizsRvxK4_tvqzBReIcRUamtI/exec',
+  POLL_MS: 20000
+};
+
+/* =========================================================================
+   LOCATIONS — every physical location across all 3 sites
+   ========================================================================= */
+const LOCATIONS = {
+  INFR: ["INFR#1/1","INFR#1/2","INFR#1/3","INFR#1/4","INFR#1/5","INFR#1/6","INFR#1/7","INFR#1/8","INFR#1/11","INFR#1/12","INFR#1/13","INFR#1/14","INFR#1/15","INFR#1/16","INFR#1/17","INFR#1/18","INFR#1/19","INFR#1/20","INFR#1/21","INFR#1/22","INFR#1/23","INFR#1/24","INFR#1/25","INFR#1/26","INFR#1/27","INFR#1/28","INFR#1/29","INFR#1/30","INFR#2/1","INFR#2/2","INFR#2/3","INFR#2/4","INFR#2/5","INFR#2/6","INFR#2/7","INFR#2/8","INFR#2/9","INFR#2/10","INFR#2/11","INFR#2/12","INFR#2/13","INFR#2/14","INFR#2/15","INFR#2/16","INFR#2/17","INFR#2/18","INFR#2/19","INFR#2/20"],
+  FR: ["FR#1A","FR#1B","FR#1C","FR#1D","FR#1E","FR#1F","FR#2A","FR#2B","FR#2C","FR#2D","FR#2E","FR#2F","FR#3A","FR#3B","FR#3C","FR#3D","FR#3E","FR#3F","FR#4A","FR#4B","FR#4C","FR#4D","FR#4E","FR#4F","FR#5A","FR#5B","FR#5C","FR#5D","FR#5E","FR#5F","FR#6A","FR#6B","FR#6C","FR#6D","FR#6E","FR#6F","FR#7A","FR#7B","FR#7C","FR#7D","FR#7E","FR#7F","FR#8A","FR#8B","FR#8C","FR#8D","FR#8E","FR#8F","FR#9A","FR#9B","FR#9C","FR#9D","FR#9E","FR#9F","FR#10A","FR#10B","FR#10C","FR#10D","FR#10E","FR#10F","FR#11A","FR#11B","FR#11C","FR#11D","FR#11E","FR#11F","FR#12A","FR#12B","FR#12C","FR#12D","FR#12E","FR#12F","FR#13A","FR#13B","FR#13C","FR#13D","FR#13E","FR#13F","FR#14A","FR#14B","FR#14C","FR#14D","FR#14E","FR#14F","FR#15A","FR#15B","FR#15C","FR#15D","FR#15E","FR#15F","FR#16A","FR#16B","FR#16C","FR#16D","FR#16E","FR#16F","FR#17A","FR#17B","FR#17C","FR#17D","FR#17E","FR#17F","FR#18A","FR#18B","FR#18C","FR#18D","FR#18E","FR#18F","FR#19A","FR#19B","FR#19C","FR#19D","FR#19E","FR#19F","FR#20A","FR#20B","FR#20C","FR#20D","FR#20E","FR#20F","FR#21A","FR#21B","FR#21C","FR#21D","FR#21E","FR#21F","FR#22A","FR#22B","FR#22C","FR#22D","FR#22E","FR#22F","FR#23A","FR#23B","FR#23C","FR#23D","FR#23E","FR#23F","FR#24A","FR#24B","FR#24C","FR#24D","FR#24E","FR#24F","FR#25A","FR#25B","FR#25C","FR#25D","FR#25E","FR#25F"],
+  WT: ["6A","6B","7A","7B","8A","8B","9A","9B","10A","10B","11A","11B","12A","12B","13A","13B","14A","14B","15A","15B","16A","16B","17A","17B","18A","18B","19A","19B","20A","20B","21A","21B","22A","22B","23A","29A","29B","30A","30B","31A","31B","32A","32B","33A","33B","34A","34B","35A","35B","36A","36B","37A","37B","38A","38B","39A","39B","40A","40B","41A","41B","42A","42B","43A","43B","44A","44B","45A","45B","46A"]
+};
+
+const SITE_INFO = {
+  INFR: { en:'Indoor Free Range', my:'အိမ်တွင်း လွတ်လပ်ကျင်းကွက်', short:'INFR' },
+  FR:   { en:'Free Range', my:'လွတ်လပ်ကျင်းကွက်', short:'FR' },
+  WT:   { en:'White Tubs', my:'အဖြူရောင်ပုံးများ', short:'White Tubs' }
+};
+
+/* =========================================================================
+   DROPDOWN OPTIONS
+   ========================================================================= */
+const WEIGHT_BRACKETS = [
+  {v:'0-50', l:'0–50g'}, {v:'51-100', l:'51–100g'}, {v:'101-200', l:'101–200g'},
+  {v:'201-300', l:'201–300g'}, {v:'301-400', l:'301–400g'}, {v:'401-500', l:'401–500g'},
+  {v:'501-600', l:'501–600g'}, {v:'601-700', l:'601–700g'}, {v:'700+', l:'700g+'}
+];
+const SEX_OPTIONS = ['MALE','FEMALE','MALE/FEMALE'];
+// Same organized morph taxonomy used in the White Tub Tracker (Animal ID)
+// app, so morph naming stays consistent across both apps. The original
+// abbreviated codes from the 2026 stock sheet are kept as their own group
+// below so existing seeded entries stay recognizable/selectable — nothing
+// from the old list was removed, just organized alongside the fuller names.
+const COLOR_GROUPS = [
+  { id:'het',     label:'HET', colors:[
+    'HET ALBINO','HET DARK RED','HET ZERO','HET TRANS','HET WITBLIT','HET THUNDERBOLT'
+  ]},
+  { id:'poss',    label:'POSS HET', colors:[
+    'POSS HET ZERO ALBINO','POSS HET WITBLIT ALBINO','POSS HET ALBINO'
+  ]},
+  { id:'base',    label:'Base Morphs', colors:[
+    'FANCY','RED','BLUE BAR','LEATHERBACK','DUNNER','GENETIC STRIPE',
+    'TRANS','YELLOW','SNOW','SN (PASTEL)'
+  ]},
+  { id:'pure',    label:'Pure Morphs', colors:[
+    'ALBINO','DARK RED','ZERO','WITBLIT','THUNDERBOLT','MARBLE','UC'
+  ]},
+  { id:'special', label:'Special', colors:[
+    'GHOST YELLOW (G/Y)','GHOST ORANGE (G/O)','SUPER BLUE (SB)',
+    'PHANTOM RED (PR)','CLOWN (CL)','FLAME (FL)','MAGMA (M)',
+    'CORAL (C)','PARADOX (PARA)','HET PARADOX (HP)'
+  ]},
+  { id:'legacy',  label:'Legacy Codes (2026 Sheet)', colors:[
+    'BB','BB/T','BF','BF-OK','D','D/BB','DR','F','FF-FANCY','FF-R','FF-UC','GS','HA','HDR',
+    'HM','HMHZ','HT','HTB','HW','HYPO','HZ','LB','LB/HTB','P/HDR','PASTEL/SNOW','PHA','PHDR',
+    'PHTB','R','RED/W/Z','SILKBACK','T','TB','TRANS DUNNER','TRANS RED','UC/HDR','W',
+    'WITBLITS','Y','Z','ZI','ZT'
+  ]}
+];
+const ALL_MORPHS = [];
+COLOR_GROUPS.forEach(g=>{ ALL_MORPHS.push(...g.colors); });
+function morphSelectHtml(id, value){
+  let h = `<select id="${id}"><option value="">-- select morph --</option>`;
+  COLOR_GROUPS.forEach(g=>{
+    h += `<optgroup label="${esc(g.label)}">`;
+    g.colors.forEach(c=>{ h += `<option value="${esc(c)}" ${c===value?'selected':''}>${esc(c)}</option>`; });
+    h += `</optgroup>`;
+  });
+  h += `</select>`;
+  return h;
+}
+const CONDITION_OPTIONS = ['','BUTT FUNGUS','MOUTH ROT','SKINNY','VERY SKINNY','SKINNY EGGED','SKY OK','SKY OK-EGGED','SWOLLEN JOINT','SW,BF','G4-OLD'];
+const GROUP_SUGGESTIONS = ['1','2','3','4','5','6','UC','OLD'];
+
+function weightLabel(v){ const w = WEIGHT_BRACKETS.find(x=>x.v===v); return w ? w.l : (v||'—'); }
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+let entries = [];
+let lastModified = 0;
+let activeTab = 'dashboard';
+let currentSite = 'INFR';
+let stockFilter = 'all';
+let reportSite = 'all';
+let tombstones = new Set();
+
+const LS = { e:'stk_entries_v1', lm:'stk_lastmod_v1', tomb:'stk_tombstones_v1' };
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+function uid(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function esc(s){ return (s===undefined||s===null)?'':String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._toastTimer); window._toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function selectHtml(id, options, value, placeholder){
+  let h = `<select id="${id}">`;
+  h += `<option value="">-- ${placeholder||'select'} --</option>`;
+  options.forEach(o=>{
+    const val = typeof o === 'object' ? o.v : o;
+    const lbl = typeof o === 'object' ? o.l : o;
+    h += `<option value="${esc(val)}" ${val===value?'selected':''}>${esc(lbl)}</option>`;
+  });
+  h += `</select>`;
+  return h;
+}
+
+/* =========================================================================
+   LOCAL STORAGE
+   ========================================================================= */
+function loadLocal(){
+  try{ entries = JSON.parse(localStorage.getItem(LS.e) || '[]'); }catch(e){ entries=[]; }
+  lastModified = Number(localStorage.getItem(LS.lm) || 0);
+  try{ tombstones = new Set(JSON.parse(localStorage.getItem(LS.tomb) || '[]')); }catch(e){ tombstones = new Set(); }
+}
+function saveLocal(){
+  localStorage.setItem(LS.e, JSON.stringify(entries));
+  localStorage.setItem(LS.lm, String(lastModified));
+  localStorage.setItem(LS.tomb, JSON.stringify([...tombstones]));
+}
+
+/* =========================================================================
+   SYNC
+   ========================================================================= */
+async function syncFromServer(silent){
+  if(!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
+    setSyncStatus('offline','Not connected'); return;
+  }
+  setSyncStatus('syncing','Syncing...');
+  try{
+    const res = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=list&t=${Date.now()}`);
+    const data = await res.json();
+    if(Array.isArray(data.entries)) entries = reconcileMerge(entries, data.entries);
+    if(data.lastModified) lastModified = data.lastModified;
+    saveLocal();
+    retryUnsynced();
+    setSyncStatus('online','Synced');
+    renderAll();
+  }catch(e){
+    setSyncStatus('offline','Offline');
+    if(!silent) toast('Could not reach server — working offline');
+  }
+}
+function reconcileMerge(localArr, serverArr){
+  const serverMap = new Map();
+  const result = [];
+  serverArr.forEach(item=>{
+    if(tombstones.has(item.id)) return;
+    serverMap.set(item.id, item);
+    result.push(item);
+  });
+  localArr.forEach(item=>{
+    if(tombstones.has(item.id)) return;
+    const onServer = serverMap.get(item.id);
+    if(!onServer){
+      if(item.synced === false) result.push(item);
+    } else if((item.updatedAt||0) > (onServer.updatedAt||0)){
+      const idx = result.findIndex(r=>r.id===item.id);
+      if(idx>=0) result[idx] = item; else result.push(item);
+    }
+  });
+  return result;
+}
+function retryUnsynced(){
+  entries.filter(e=>e.synced===false).forEach(e=>{
+    pushToServer('saveEntry', e).then(ok=>{ if(ok){ e.synced=true; saveLocal(); } });
+  });
+}
+function setSyncStatus(state, label){
+  const dot=document.getElementById('syncDot'), lbl=document.getElementById('syncLabel');
+  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='offline'?' offline':'');
+  lbl.textContent = label;
+}
+async function pushToServer(action, payload){
+  if(!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) return false;
+  try{
+    setSyncStatus('syncing','Saving...');
+    const url = `${CONFIG.APPS_SCRIPT_URL}?action=${action}&payload=${encodeURIComponent(JSON.stringify(payload))}`;
+    await fetch(url);
+    setSyncStatus('online','Synced');
+    return true;
+  }catch(e){
+    setSyncStatus('offline','Offline (saved locally)');
+    return false;
+  }
+}
+
+/* =========================================================================
+   CRUD
+   ========================================================================= */
+function upsertEntry(e){
+  e.updatedAt = Date.now();
+  if(e.synced === undefined) e.synced = false;
+  const idx = entries.findIndex(x=>x.id===e.id);
+  if(idx>=0) entries[idx]=e; else entries.push(e);
+  saveLocal();
+  pushToServer('saveEntry', e).then(ok=>{ if(ok){ e.synced = true; saveLocal(); } });
+  renderAll();
+}
+function deleteEntry(id){
+  tombstones.add(id);
+  entries = entries.filter(e=>e.id!==id);
+  saveLocal();
+  pushToServer('deleteEntry', {id});
+  renderAll();
+}
+
+/* =========================================================================
+   DATA HELPERS
+   ========================================================================= */
+function entriesForLocation(site, loc){
+  return entries.filter(e=>e.site===site && e.location===loc);
+}
+function totalAt(site, loc){
+  return entriesForLocation(site,loc).reduce((s,e)=>s+(Number(e.amount)||0),0);
+}
+function filteredEntries(site){
+  return site==='all' ? entries : entries.filter(e=>e.site===site);
+}
+function tallyBy(list, keyFn){
+  const t = {};
+  list.forEach(e=>{
+    const k = keyFn(e) || '(none)';
+    t[k] = (t[k]||0) + (Number(e.amount)||0);
+  });
+  return t;
+}
+
+/* =========================================================================
+   RENDER — DASHBOARD
+   ========================================================================= */
+function renderDashboard(){
+  const totalAnimals = entries.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const totalLocations = LOCATIONS.INFR.length + LOCATIONS.FR.length + LOCATIONS.WT.length;
+  const filledLocations = new Set(entries.map(e=>e.site+'::'+e.location)).size;
+  const totalMorphs = new Set(entries.map(e=>e.morph).filter(Boolean)).size;
+
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card"><div class="num">${totalAnimals}</div><div class="lbl">Total Animals<span class="my">တိရစ္ဆာန်စုစုပေါင်း</span></div></div>
+    <div class="stat-card"><div class="num">${filledLocations}/${totalLocations}</div><div class="lbl">Locations Filled<span class="my">တည်နေရာ ဖြည့်ပြီး</span></div></div>
+    <div class="stat-card"><div class="num">${totalMorphs}</div><div class="lbl">Morphs Present<span class="my">မျိုးရိုးအမျိုးအစား</span></div></div>
+    <div class="stat-card"><div class="num">${entries.length}</div><div class="lbl">Entries Logged<span class="my">မှတ်တမ်းအရေအတွက်</span></div></div>
+  `;
+
+  document.getElementById('siteBreakdown').innerHTML = Object.keys(SITE_INFO).map(site=>{
+    const total = entries.filter(e=>e.site===site).reduce((s,e)=>s+(Number(e.amount)||0),0);
+    const filled = new Set(entries.filter(e=>e.site===site).map(e=>e.location)).size;
+    return `<div class="report-row"><span class="rg">${SITE_INFO[site].en}</span><span class="rd">${total} animals · ${filled}/${LOCATIONS[site].length} locations</span></div>`;
+  }).join('');
+
+  const recent = [...entries].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,8);
+  document.getElementById('recentEntries').innerHTML = recent.length ? recent.map(e=>`
+    <div class="report-row"><span class="rg">${SITE_INFO[e.site].short} — ${esc(e.location)}</span><span class="rd">${esc(e.morph)||'—'} · ${esc(e.sex)||'—'} · ×${e.amount||0}</span></div>
+  `).join('') : `<div class="empty-state">No entries logged yet</div>`;
+}
+
+/* =========================================================================
+   RENDER — STOCK (by location)
+   ========================================================================= */
+function renderSiteTabs(){
+  document.getElementById('siteTabs').innerHTML = Object.keys(SITE_INFO).map(site=>`
+    <button class="site-tab ${currentSite===site?'active':''}" onclick="setSite('${site}')">${SITE_INFO[site].short}<span class="my">${SITE_INFO[site].my}</span></button>
+  `).join('');
+}
+function setSite(site){ currentSite = site; renderSiteTabs(); renderStockFilters(); renderLocationList(); }
+function renderStockFilters(){
+  const filters = [{k:'all',l:'All'},{k:'filled',l:'Filled'},{k:'empty',l:'Empty'}];
+  document.getElementById('stockFilters').innerHTML = filters.map(f=>
+    `<button class="filter-chip ${stockFilter===f.k?'active':''}" onclick="setStockFilter('${f.k}')">${f.l}</button>`
+  ).join('');
+}
+function setStockFilter(k){ stockFilter=k; renderLocationList(); renderStockFilters(); }
+function renderLocationList(){
+  const q = (document.getElementById('locSearch').value||'').toLowerCase();
+  let locs = LOCATIONS[currentSite].filter(l=>l.toLowerCase().includes(q));
+  if(stockFilter==='filled') locs = locs.filter(l=>totalAt(currentSite,l)>0);
+  else if(stockFilter==='empty') locs = locs.filter(l=>totalAt(currentSite,l)===0);
+
+  document.getElementById('locationList').innerHTML = locs.length ? locs.map(loc=>{
+    const list = entriesForLocation(currentSite, loc);
+    const total = totalAt(currentSite, loc);
+    const morphs = [...new Set(list.map(e=>e.morph).filter(Boolean))];
+    return `
+      <div class="list-item" onclick="openLocationModal('${currentSite}','${esc(loc)}')">
+        <div class="li-top">
+          <div>
+            <div class="li-title">${esc(loc)}</div>
+            <div class="li-sub">${list.length} ${list.length===1?'entry':'entries'}</div>
+          </div>
+          <span class="badge ${total>0?'filled':'empty'}">${total>0? total+' animals' : 'Empty'}</span>
+        </div>
+        ${morphs.length?`<div class="li-meta">${morphs.slice(0,6).map(m=>`<span class="chip">${esc(m)}</span>`).join('')}${morphs.length>6?`<span class="chip">+${morphs.length-6}</span>`:''}</div>`:''}
+      </div>`;
+  }).join('') : `<div class="empty-state">No locations match</div>`;
+}
+
+/* =========================================================================
+   MODAL — LOCATION DETAIL (list entries + add new)
+   ========================================================================= */
+function openLocationModal(site, loc){
+  const list = entriesForLocation(site, loc).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const total = totalAt(site, loc);
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <div><h3>${esc(loc)}</h3><div class="my">${SITE_INFO[site].en} — ${total} animals</div></div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="entryListWrap">
+          ${list.length ? list.map(e=>`
+            <div class="entry-row">
+              <div class="er-info">
+                <div class="er-morph">${esc(e.morph)||'—'} ${e.condition?`<span style="color:var(--red);font-weight:600;">· ${esc(e.condition)}</span>`:''}</div>
+                <div class="er-meta">${esc(e.sex)||'—'} · ${weightLabel(e.weight)} ${e.group?`· Group ${esc(e.group)}`:''}</div>
+              </div>
+              <span class="er-amt">${e.amount||0}</span>
+              <button class="entry-del" onclick="confirmDeleteEntry('${e.id}','${site}','${esc(loc)}')">Delete</button>
+            </div>
+          `).join('') : `<div class="empty-state" style="padding:16px 0;">No entries yet for this location</div>`}
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="openEntryForm('${site}','${esc(loc)}')">+ Add Entry <span class="my">ထည့်ရန်</span></button>
+      </div>
+    </div>
+  </div>`;
+}
+function confirmDeleteEntry(id, site, loc){
+  if(confirm('Delete this stock entry?')){
+    deleteEntry(id);
+    openLocationModal(site, loc);
+  }
+}
+
+/* =========================================================================
+   MODAL — ADD ENTRY FORM
+   ========================================================================= */
+function openEntryForm(site, loc){
+  const root = document.getElementById('modalRoot');
+  const groupOptionsHtml = GROUP_SUGGESTIONS.map(g=>`<option value="${esc(g)}">`).join('');
+  root.innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <div><h3>Add Stock Entry</h3><div class="my">${esc(loc)} — ${SITE_INFO[site].en}</div></div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="full">
+            <label>Morph <span class="my">မျိုးရိုး</span></label>
+            ${morphSelectHtml('f_morph', '')}
+          </div>
+          <div>
+            <label>Sex <span class="my">ကျား/မ</span></label>
+            ${selectHtml('f_sex', SEX_OPTIONS, '', 'select')}
+          </div>
+          <div>
+            <label>Weight <span class="my">အလေးချိန်</span></label>
+            ${selectHtml('f_weight', WEIGHT_BRACKETS, '', 'select')}
+          </div>
+          <div>
+            <label>Amount <span class="my">ပမာဏ</span></label>
+            <input type="number" id="f_amount" min="1" value="1">
+          </div>
+          <div>
+            <label>Group # <span class="my">အုပ်စု</span></label>
+            <input type="text" id="f_group" list="groupOptions" placeholder="e.g. 1, UC">
+            <datalist id="groupOptions">${groupOptionsHtml}</datalist>
+          </div>
+          <div class="full">
+            <label>Condition / Flag (optional) <span class="my">အခြေအနေ</span></label>
+            ${selectHtml('f_condition', CONDITION_OPTIONS.filter(Boolean), '', 'none')}
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" style="flex:1" onclick="openLocationModal('${site}','${esc(loc)}')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1" onclick="submitEntry('${site}','${esc(loc)}')">Save Entry</button>
+      </div>
+    </div>
+  </div>`;
+}
+function submitEntry(site, loc){
+  const val = k=>document.getElementById(k)?.value?.trim() || '';
+  const amount = Number(val('f_amount'));
+  if(!amount || amount<=0){ toast('Enter a valid amount'); return; }
+  const e = {
+    id: uid('stk'), site, location: loc,
+    morph: val('f_morph'), sex: val('f_sex'), weight: val('f_weight'),
+    amount, group: val('f_group'), condition: val('f_condition'),
+    date: todayStr()
+  };
+  upsertEntry(e);
+  toast('Entry saved');
+  openLocationModal(site, loc);
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* =========================================================================
+   RENDER — REPORTS
+   ========================================================================= */
+function renderReportSiteFilter(){
+  const opts = [{k:'all',l:'All Sites'}, ...Object.keys(SITE_INFO).map(s=>({k:s,l:SITE_INFO[s].short}))];
+  document.getElementById('reportSiteFilter').innerHTML = opts.map(o=>
+    `<button class="filter-chip ${reportSite===o.k?'active':''}" onclick="setReportSite('${o.k}')">${o.l}</button>`
+  ).join('');
+}
+function setReportSite(k){ reportSite=k; renderReports(); renderReportSiteFilter(); }
+
+function renderReports(){
+  const list = filteredEntries(reportSite);
+  const total = list.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const locsFilled = new Set(list.map(e=>e.site+'::'+e.location)).size;
+  const morphCount = new Set(list.map(e=>e.morph).filter(Boolean)).size;
+
+  document.getElementById('reportStats').innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">Total Animals</div></div>
+    <div class="stat-card"><div class="num">${locsFilled}</div><div class="lbl">Locations Filled</div></div>
+    <div class="stat-card"><div class="num">${morphCount}</div><div class="lbl">Morphs</div></div>
+    <div class="stat-card"><div class="num">${list.length}</div><div class="lbl">Entries</div></div>
+  `;
+
+  const byMorph = tallyBy(list, e=>e.morph);
+  const bySex = tallyBy(list, e=>e.sex);
+  const byWeight = tallyBy(list, e=>weightLabel(e.weight));
+  const byGroup = tallyBy(list, e=>e.group);
+
+  function renderTally(elId, obj){
+    const keys = Object.keys(obj).sort((a,b)=>obj[b]-obj[a]);
+    document.getElementById(elId).innerHTML = keys.length ? keys.map(k=>
+      `<div class="report-row"><span class="rg">${esc(k)}</span><span class="rd">${obj[k]}</span></div>`
+    ).join('') : `<div class="empty-state">No data</div>`;
+  }
+  renderTally('reportByMorph', byMorph);
+  renderTally('reportBySex', bySex);
+  renderTally('reportByWeight', byWeight);
+  renderTally('reportByGroup', byGroup);
+
+  window._reportCache = { site: reportSite, total, locsFilled, morphCount, entryCount:list.length, byMorph, bySex, byWeight, byGroup };
+}
+function copyStockReport(){
+  const c = window._reportCache;
+  if(!c){ toast('Report not ready'); return; }
+  const siteLabel = c.site==='all' ? 'All Sites' : SITE_INFO[c.site].en;
+  let text = `SRR STOCK REPORT — ${siteLabel} — ${todayStr()}\n\n`;
+  text += `Total Animals: ${c.total}\nLocations Filled: ${c.locsFilled}\nMorphs: ${c.morphCount}\nEntries: ${c.entryCount}\n\n`;
+  function block(title, obj){
+    text += title + ':\n';
+    const keys = Object.keys(obj).sort((a,b)=>obj[b]-obj[a]);
+    if(!keys.length) text += '  (none)\n';
+    keys.forEach(k=>{ text += `  ${k}: ${obj[k]}\n`; });
+    text += '\n';
+  }
+  block('By Morph', c.byMorph);
+  block('By Sex', c.bySex);
+  block('By Weight', c.byWeight);
+  block('By Group #', c.byGroup);
+  navigator.clipboard.writeText(text).then(()=>toast('Report copied to clipboard')).catch(()=>toast('Could not copy — select manually'));
+}
+
+/* =========================================================================
+   TABS
+   ========================================================================= */
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+  renderAll();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click', ()=>switchTab(btn.dataset.tab)));
+document.getElementById('locSearch').addEventListener('input', renderLocationList);
+
+/* =========================================================================
+   RENDER ALL / INIT
+   ========================================================================= */
+function renderAll(){
+  renderDashboard();
+  renderSiteTabs(); renderStockFilters(); renderLocationList();
+  renderReportSiteFilter(); renderReports();
+}
+function init(){
+  loadLocal();
+  renderAll();
+  switchTab('dashboard');
+  syncFromServer(true);
+  setInterval(()=>syncFromServer(true), CONFIG.POLL_MS);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromServer(true); });
+  window.addEventListener('focus', ()=>syncFromServer(true));
+  window.addEventListener('online', ()=>syncFromServer(true));
+}
+init();
+</script>
+</body>
+</html>
